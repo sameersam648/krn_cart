@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
-import { ScrollView, Text, TextInput, TouchableOpacity, View, Alert } from 'react-native';
+import { ScrollView, Text, View, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useAuth } from '@/lib/auth-context';
+import { Ionicons } from '@expo/vector-icons';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Card } from '@/components/ui/Card';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -29,71 +33,77 @@ export default function LoginScreen() {
   };
 
   return (
-    <ScreenContainer edges={['top', 'left', 'right', 'bottom']} className="justify-center p-6">
-      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
-        <View className="gap-8">
+    <ScreenContainer edges={['top', 'left', 'right', 'bottom']} className="bg-background">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Header */}
-          <View className="items-center gap-2">
-            <Text className="text-4xl font-bold text-foreground">Restaurant Partner</Text>
-            <Text className="text-base text-muted text-center">
-              Manage your orders efficiently
+          <View className="items-center mb-12">
+            <View className="h-24 w-24 bg-primary/10 rounded-full items-center justify-center mb-6 shadow-sm border border-primary/20">
+              <Ionicons name="restaurant" size={48} color="#FF6B35" />
+            </View>
+            <Text className="text-4xl font-extrabold text-foreground mb-2 tracking-tight">
+              Restaurant Partner
+            </Text>
+            <Text className="text-base text-muted text-center max-w-[280px]">
+              Manage your orders and grow your business
             </Text>
           </View>
 
-          {/* Form */}
-          <View className="gap-4">
-            {/* Email Input */}
-            <View>
-              <Text className="text-sm font-semibold text-foreground mb-2">Email</Text>
-              <TextInput
-                className="bg-surface border border-border rounded-lg px-4 py-3 text-foreground"
-                placeholder="restaurant@example.com"
-                placeholderTextColor="#9BA1A6"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                editable={!isLoading}
-                value={email}
-                onChangeText={setEmail}
-              />
-            </View>
+          {/* Login Form */}
+          <View className="gap-6">
+            <Input
+              label="Email Address"
+              placeholder="restaurant@example.com"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              editable={!isLoading}
+              icon={<Ionicons name="mail-outline" size={20} color="#64748B" />}
+            />
 
-            {/* Password Input */}
-            <View>
-              <Text className="text-sm font-semibold text-foreground mb-2">Password</Text>
-              <TextInput
-                className="bg-surface border border-border rounded-lg px-4 py-3 text-foreground"
-                placeholder="Enter your password"
-                placeholderTextColor="#9BA1A6"
-                secureTextEntry
-                editable={!isLoading}
-                value={password}
-                onChangeText={setPassword}
-              />
-            </View>
+            <Input
+              label="Password"
+              placeholder="Enter your password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              editable={!isLoading}
+              icon={<Ionicons name="lock-closed-outline" size={20} color="#64748B" />}
+            />
 
-            {/* Login Button */}
-            <TouchableOpacity
+            <Button
+              label={isLoading ? "Signing In..." : "Sign In"}
               onPress={handleLogin}
-              disabled={isLoading}
-              style={{ opacity: isLoading ? 0.6 : 1 }}
-              className="bg-primary rounded-lg py-4 items-center mt-4"
-            >
-              <Text className="text-white font-semibold text-base">
-                {isLoading ? 'Signing In...' : 'Sign In'}
-              </Text>
-            </TouchableOpacity>
+              loading={isLoading}
+              size="lg"
+              className="mt-2"
+            />
           </View>
 
           {/* Demo Info */}
-          <View className="bg-surface rounded-lg p-4 border border-border">
-            <Text className="text-xs font-semibold text-foreground mb-2">Demo Credentials</Text>
-            <Text className="text-xs text-muted">
-              Email: demo@restaurant.com{'\n'}
-              Password: demo123
-            </Text>
-          </View>
-        </View>
-      </ScrollView>
+          <Card className="mt-8 bg-primary/5 border-primary/20">
+            <View className="flex-row items-start">
+              <View className="bg-primary/20 p-2 rounded-lg mr-3">
+                <Ionicons name="information-circle" size={20} color="#FF6B35" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-xs font-bold text-foreground mb-2 uppercase tracking-wide">Demo Credentials</Text>
+                <Text className="text-sm text-muted leading-5">
+                  Email: <Text className="text-foreground font-semibold">demo@restaurant.com</Text>{'\n'}
+                  Password: <Text className="text-foreground font-semibold">demo123</Text>
+                </Text>
+              </View>
+            </View>
+          </Card>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </ScreenContainer>
   );
 }

@@ -35,7 +35,7 @@ export interface ServiceItem {
     submenuItems?: { id: string; name: string }[];
 }
 
-// 10 Main Food Categories
+// 9 Main Food Categories (Vegetables moved to Book Now section)
 export const foodCategories: FoodCategory[] = [
     { id: '1', name: 'BREAKFAST', icon: '🌅', route: '/categories/breakfast', hasSubcategory: false },
     { id: '2', name: 'LUNCH', icon: '🍱', route: '/categories/lunch', hasSubcategory: true },
@@ -45,8 +45,7 @@ export const foodCategories: FoodCategory[] = [
     { id: '6', name: 'CHATS', icon: '🥘', route: '/categories/chats', hasSubcategory: false },
     { id: '7', name: 'BEVERAGES', icon: '🥤', route: '/categories/beverages', hasSubcategory: false },
     { id: '8', name: 'DAIRY ITEMS', icon: '🥛', route: '/categories/dairy', hasSubcategory: false },
-    { id: '9', name: 'VEGETABLES', icon: '🥬', route: '/categories/vegetables', hasSubcategory: false },
-    { id: '10', name: 'SERVICES', icon: '🛎️', route: '/categories/services', hasSubcategory: false },
+    { id: '9', name: 'SERVICES', icon: '🛎️', route: '/categories/services', hasSubcategory: false },
 ];
 
 // Hotels by Category
@@ -56,7 +55,7 @@ export const categoryHotels: Record<string, Hotel[]> = {
         {
             id: 'udupi',
             name: 'Udupi Hotel',
-            image: 'https://images.unsplash.com/photo-1585937421612-70a19fb6930b?w=400&h=300&fit=crop',
+            image: 'https://images.unsplash.com/photo-1630383249896-424e482df921?w=400&h=300&fit=crop',
             rating: 4.5,
             description: 'Traditional South Indian breakfast',
             deliveryTime: '20-30 min',
@@ -64,7 +63,7 @@ export const categoryHotels: Record<string, Hotel[]> = {
         {
             id: 'shree',
             name: 'Shree Hotel',
-            image: 'https://images.unsplash.com/photo-1585937421612-70a19fb6930b?w=400&h=300&fit=crop',
+            image: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=400&h=300&fit=crop',
             rating: 4.4,
             description: 'Delicious breakfast options',
             deliveryTime: '25-35 min',
@@ -72,7 +71,7 @@ export const categoryHotels: Record<string, Hotel[]> = {
         {
             id: 'shree-tiffanis',
             name: 'Shree Tiffanis Hotel',
-            image: 'https://images.unsplash.com/photo-1585937421612-70a19fb6930b?w=400&h=300&fit=crop',
+            image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=400&h=300&fit=crop',
             rating: 4.3,
             description: 'Fresh tiffin items',
             deliveryTime: '20-30 min',
@@ -80,7 +79,7 @@ export const categoryHotels: Record<string, Hotel[]> = {
         {
             id: 'shree-kanteshwara',
             name: 'Shree Kanteshwara Hotel',
-            image: 'https://images.unsplash.com/photo-1585937421612-70a19fb6930b?w=400&h=300&fit=crop',
+            image: 'https://images.unsplash.com/photo-1596797038530-2c107229654b?w=400&h=300&fit=crop',
             rating: 4.6,
             description: 'Quality breakfast meals',
             deliveryTime: '25-30 min',

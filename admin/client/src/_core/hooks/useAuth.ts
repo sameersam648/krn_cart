@@ -1,84 +1,39 @@
-import { getLoginUrl } from "@/const";
-import { trpc } from "@/lib/trpc";
-import { TRPCClientError } from "@trpc/client";
-import { useCallback, useEffect, useMemo } from "react";
+// Simplified useAuth hook - authentication removed for development
+// You can add your own authentication later
 
-type UseAuthOptions = {
-  redirectOnUnauthenticated?: boolean;
-  redirectPath?: string;
+type MockUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: "admin" | "user";
 };
 
-export function useAuth(options?: UseAuthOptions) {
-  const { redirectOnUnauthenticated = false, redirectPath = getLoginUrl() } =
-    options ?? {};
-  const utils = trpc.useUtils();
+const mockAdminUser: MockUser = {
+  id: "admin-1",
+  name: "Admin User",
+  email: "admin@example.com",
+  role: "admin",
+};
 
-  const meQuery = trpc.auth.me.useQuery(undefined, {
-    retry: false,
-    refetchOnWindowFocus: false,
-  });
+type UseAuthReturn = {
+  user: MockUser | null;
+  loading: boolean;
+  error: Error | null;
+  isAuthenticated: boolean;
+  refresh: () => void;
+  logout: () => void;
+};
 
-  const logoutMutation = trpc.auth.logout.useMutation({
-    onSuccess: () => {
-      utils.auth.me.setData(undefined, null);
-    },
-  });
-
-  const logout = useCallback(async () => {
-    try {
-      await logoutMutation.mutateAsync();
-    } catch (error: unknown) {
-      if (
-        error instanceof TRPCClientError &&
-        error.data?.code === "UNAUTHORIZED"
-      ) {
-        return;
-      }
-      throw error;
-    } finally {
-      utils.auth.me.setData(undefined, null);
-      await utils.auth.me.invalidate();
-    }
-  }, [logoutMutation, utils]);
-
-  const state = useMemo(() => {
-    localStorage.setItem(
-      "manus-runtime-user-info",
-      JSON.stringify(meQuery.data)
-    );
-    return {
-      user: meQuery.data ?? null,
-      loading: meQuery.isLoading || logoutMutation.isPending,
-      error: meQuery.error ?? logoutMutation.error ?? null,
-      isAuthenticated: Boolean(meQuery.data),
-    };
-  }, [
-    meQuery.data,
-    meQuery.error,
-    meQuery.isLoading,
-    logoutMutation.error,
-    logoutMutation.isPending,
-  ]);
-
-  useEffect(() => {
-    if (!redirectOnUnauthenticated) return;
-    if (meQuery.isLoading || logoutMutation.isPending) return;
-    if (state.user) return;
-    if (typeof window === "undefined") return;
-    if (window.location.pathname === redirectPath) return;
-
-    window.location.href = redirectPath
-  }, [
-    redirectOnUnauthenticated,
-    redirectPath,
-    logoutMutation.isPending,
-    meQuery.isLoading,
-    state.user,
-  ]);
-
+export function useAuth(): UseAuthReturn {
+  // Always return authenticated admin user for development
   return {
-    ...state,
-    refresh: () => meQuery.refetch(),
-    logout,
+    user: mockAdminUser,
+    loading: false,
+    error: null,
+    isAuthenticated: true,
+    refresh: () => { },
+    logout: () => {
+      console.log("Logout clicked - implement your own logout logic here");
+    },
   };
 }

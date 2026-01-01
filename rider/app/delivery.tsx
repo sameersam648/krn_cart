@@ -1,31 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { ScrollView, Text, View, TouchableOpacity, Alert, Linking } from "react-native";
+import { ScrollView, Text, View, Alert, Linking } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { ScreenContainer } from "@/components/screen-container";
 import { useOrders, type OrderStatus } from "@/lib/order-context";
-
-const STATUS_STEPS: OrderStatus[] = ["accepted", "reached_restaurant", "picked_up", "on_the_way", "delivered"];
-
-const STATUS_LABELS: Record<OrderStatus, string> = {
-  accepted: "Accepted",
-  reached_restaurant: "Reached Restaurant",
-  picked_up: "Picked Up",
-  on_the_way: "On the Way",
-  delivered: "Delivered",
-  pending: "Pending",
-  cancelled: "Cancelled",
-};
-
-const STATUS_COLORS: Record<OrderStatus, string> = {
-  accepted: "bg-blue-500",
-  reached_restaurant: "bg-orange-500",
-  picked_up: "bg-purple-500",
-  on_the_way: "bg-indigo-500",
-  delivered: "bg-green-500",
-  pending: "bg-gray-500",
-  cancelled: "bg-red-500",
-};
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { StatusBadge } from "@/components/ui/StatusBadge";
+import { Ionicons } from "@expo/vector-icons";
+import { STATUS_STEPS, STATUS_LABELS, formatCurrency, generateMapsUrl } from "@/lib/constants";
 
 export default function DeliveryScreen() {
   const router = useRouter();
@@ -44,8 +27,9 @@ export default function DeliveryScreen() {
 
   if (!activeOrder || activeOrder.id !== orderId) {
     return (
-      <ScreenContainer className="justify-center items-center">
-        <Text className="text-foreground">Order not found</Text>
+      <ScreenContainer className="justify-center items-center bg-background">
+        <Ionicons name="alert-circle-outline" size={64} color="#EF4444" />
+        <Text className="text-xl font-bold text-foreground mt-4">Order not found</Text>
       </ScreenContainer>
     );
   }
@@ -58,6 +42,7 @@ export default function DeliveryScreen() {
       setCurrentStatusIndex(currentStatusIndex + 1);
 
       if (nextStatus === "delivered") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         Alert.alert("Success", "Order delivered successfully!", [
           {
             text: "OK",
@@ -68,8 +53,8 @@ export default function DeliveryScreen() {
     }
   };
 
-  const handleOpenMaps = (lat: number, lng: number, label: string) => {
-    const url = `https://maps.google.com/?q=${lat},${lng}`;
+  const handleOpenMaps = (lat: number, lng: number) => {
+    const url = generateMapsUrl(lat, lng);
     Linking.openURL(url).catch(() => {
       Alert.alert("Error", "Could not open maps");
     });
@@ -77,9 +62,10 @@ export default function DeliveryScreen() {
 
   const handleCancel = () => {
     Alert.alert("Cancel Delivery", "Are you sure you want to cancel this delivery?", [
-      { text: "No", onPress: () => {} },
+      { text: "No", style: "cancel" },
       {
         text: "Yes, Cancel",
+        style: "destructive",
         onPress: () => {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
           updateOrderStatus(activeOrder.id, "cancelled");
@@ -89,151 +75,173 @@ export default function DeliveryScreen() {
     ]);
   };
 
+  const nextAction = currentStatusIndex < STATUS_STEPS.length - 1
+    ? `Mark as ${STATUS_LABELS[STATUS_STEPS[currentStatusIndex + 1]]}`
+    : "Complete Delivery";
+
   return (
-    <ScreenContainer className="p-4">
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
-        {/* Header */}
-        <View className="mb-6 pb-4 border-b border-border">
-          <TouchableOpacity onPress={() => router.back()} className="mb-3">
-            <Text className="text-primary font-semibold">← Back</Text>
-          </TouchableOpacity>
-          <Text className="text-2xl font-bold text-foreground">Order {activeOrder.id}</Text>
-          <Text className="text-sm text-muted mt-1">
-            {new Date(activeOrder.createdAt).toLocaleString()}
-          </Text>
-        </View>
+    <ScreenContainer className="p-0 bg-background">
+      {/* Header */}
+      <View className="px-5 py-4 bg-surface border-b border-border/40">
+        <Button
+          label="Back"
+          variant="ghost"
+          size="md"
+          onPress={() => router.back()}
+          icon={<Ionicons name="arrow-back" size={20} color="#FF6B35" />}
+          className="self-start -ml-2 mb-2"
+        />
+        <Text className="text-2xl font-extrabold text-foreground">Order {activeOrder.id}</Text>
+        <Text className="text-sm text-muted mt-1">
+          {new Date(activeOrder.createdAt).toLocaleString()}
+        </Text>
+      </View>
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, paddingBottom: 120 }}>
+        {/* Current Status - Large for Visibility */}
+        <Card className="mb-4 bg-primary/5 border-2 border-primary/30">
+          <View className="items-center py-2">
+            <Text className="text-xs font-bold text-muted uppercase tracking-wider mb-2">Current Status</Text>
+            <StatusBadge status={activeOrder.status as OrderStatus} size="large" />
+          </View>
+        </Card>
 
         {/* Status Progress */}
-        <View className="mb-6 p-4 bg-surface rounded-lg border border-border">
-          <Text className="text-sm font-semibold text-muted uppercase mb-3">Current Status</Text>
-          <View className="flex-row items-center gap-2 mb-3">
-            <View className={`w-3 h-3 rounded-full ${STATUS_COLORS[activeOrder.status as OrderStatus]}`} />
-            <Text className="text-lg font-bold text-foreground">{STATUS_LABELS[activeOrder.status as OrderStatus]}</Text>
-          </View>
-
-          {/* Status Steps */}
-          <View className="gap-2">
+        <Card className="mb-4">
+          <Text className="text-sm font-bold text-muted uppercase mb-4">Delivery Progress</Text>
+          <View className="gap-3">
             {STATUS_STEPS.map((status, index) => (
-              <View key={status} className="flex-row items-center gap-3">
+              <View key={status} className="flex-row items-center">
                 <View
-                  className={`w-8 h-8 rounded-full items-center justify-center ${
-                    index <= currentStatusIndex ? "bg-primary" : "bg-border"
-                  }`}
+                  className={`w-10 h-10 rounded-full items-center justify-center ${index <= currentStatusIndex ? "bg-primary" : "bg-border"
+                    }`}
                 >
-                  <Text className={`text-xs font-bold ${index <= currentStatusIndex ? "text-white" : "text-muted"}`}>
-                    {index + 1}
-                  </Text>
+                  {index <= currentStatusIndex ? (
+                    <Ionicons name="checkmark" size={20} color="white" />
+                  ) : (
+                    <Text className="text-sm font-bold text-muted">{index + 1}</Text>
+                  )}
                 </View>
-                <Text className={`text-sm font-semibold ${index <= currentStatusIndex ? "text-foreground" : "text-muted"}`}>
+                <Text className={`text-base font-bold ml-3 ${index <= currentStatusIndex ? "text-foreground" : "text-muted"}`}>
                   {STATUS_LABELS[status]}
                 </Text>
               </View>
             ))}
           </View>
-        </View>
+        </Card>
 
         {/* Restaurant Info */}
-        <View className="mb-4 p-4 bg-surface rounded-lg border border-border">
-          <Text className="text-sm font-semibold text-muted uppercase mb-2">Pickup Location</Text>
-          <Text className="text-base font-semibold text-foreground">{activeOrder.restaurantName}</Text>
-          <Text className="text-sm text-muted mt-1">{activeOrder.restaurantAddress}</Text>
-          <TouchableOpacity
-            onPress={() =>
-              handleOpenMaps(activeOrder.restaurantLat, activeOrder.restaurantLng, activeOrder.restaurantName)
-            }
-            className="mt-3 py-2 px-3 bg-primary rounded-lg items-center"
-          >
-            <Text className="text-white text-sm font-semibold">Open in Maps</Text>
-          </TouchableOpacity>
-        </View>
+        <Card className="mb-4">
+          <View className="flex-row items-center mb-3">
+            <View className="w-10 h-10 bg-primary/10 rounded-full items-center justify-center mr-3">
+              <Ionicons name="restaurant" size={20} color="#FF6B35" />
+            </View>
+            <Text className="text-lg font-bold text-foreground">Pickup Location</Text>
+          </View>
+          <Text className="text-base font-bold text-foreground mb-1">{activeOrder.restaurantName}</Text>
+          <Text className="text-sm text-muted mb-4">{activeOrder.restaurantAddress}</Text>
+          <Button
+            label="Open in Maps"
+            variant="primary"
+            size="lg"
+            onPress={() => handleOpenMaps(activeOrder.restaurantLat, activeOrder.restaurantLng)}
+            icon={<Ionicons name="navigate" size={20} color="white" />}
+          />
+        </Card>
 
         {/* Customer Info */}
-        <View className="mb-4 p-4 bg-surface rounded-lg border border-border">
-          <Text className="text-sm font-semibold text-muted uppercase mb-2">Delivery Location</Text>
-          <Text className="text-base font-semibold text-foreground">{activeOrder.customerName}</Text>
-          <Text className="text-sm text-muted mt-1">{activeOrder.customerPhone}</Text>
-          <Text className="text-sm text-muted mt-2">{activeOrder.deliveryAddress}</Text>
-          <TouchableOpacity
-            onPress={() =>
-              handleOpenMaps(activeOrder.deliveryLat, activeOrder.deliveryLng, activeOrder.customerName)
-            }
-            className="mt-3 py-2 px-3 bg-primary rounded-lg items-center"
-          >
-            <Text className="text-white text-sm font-semibold">Open in Maps</Text>
-          </TouchableOpacity>
-        </View>
+        <Card className="mb-4">
+          <View className="flex-row items-center mb-3">
+            <View className="w-10 h-10 bg-success/10 rounded-full items-center justify-center mr-3">
+              <Ionicons name="location" size={20} color="#10B981" />
+            </View>
+            <Text className="text-lg font-bold text-foreground">Delivery Location</Text>
+          </View>
+          <Text className="text-base font-bold text-foreground mb-1">{activeOrder.customerName}</Text>
+          <Text className="text-sm text-muted mb-1">{activeOrder.customerPhone}</Text>
+          <Text className="text-sm text-muted mb-4">{activeOrder.deliveryAddress}</Text>
+          <Button
+            label="Open in Maps"
+            variant="success"
+            size="lg"
+            onPress={() => handleOpenMaps(activeOrder.deliveryLat, activeOrder.deliveryLng)}
+            icon={<Ionicons name="navigate" size={20} color="white" />}
+          />
+        </Card>
 
         {/* Order Items */}
-        <View className="mb-4 p-4 bg-surface rounded-lg border border-border">
-          <Text className="text-sm font-semibold text-muted uppercase mb-3">Order Items</Text>
+        <Card className="mb-4">
+          <View className="flex-row items-center mb-3">
+            <Ionicons name="bag-handle" size={20} color="#64748B" />
+            <Text className="text-base font-bold text-foreground ml-2">Order Items ({activeOrder.items.length})</Text>
+          </View>
           {activeOrder.items.map((item) => (
-            <View key={item.id} className="flex-row justify-between items-center py-2 border-b border-border last:border-b-0">
+            <View key={item.id} className="flex-row justify-between py-2 border-b border-border/30 last:border-b-0">
               <View className="flex-1">
-                <Text className="text-sm font-semibold text-foreground">{item.name}</Text>
-                <Text className="text-xs text-muted">Qty: {item.quantity}</Text>
+                <Text className="text-base font-semibold text-foreground">{item.name}</Text>
+                <Text className="text-sm text-muted">Qty: {item.quantity}</Text>
               </View>
-              <Text className="text-sm font-semibold text-foreground">${item.price.toFixed(2)}</Text>
+              <Text className="text-base font-bold text-foreground">${item.price.toFixed(2)}</Text>
             </View>
           ))}
-        </View>
+        </Card>
 
         {/* Special Instructions */}
         {activeOrder.specialInstructions && (
-          <View className="mb-4 p-4 bg-warning/10 rounded-lg border border-warning">
-            <Text className="text-sm font-semibold text-warning uppercase mb-1">Special Instructions</Text>
-            <Text className="text-sm text-foreground">{activeOrder.specialInstructions}</Text>
-          </View>
+          <Card className="mb-4 bg-warning/10 border-2 border-warning/30">
+            <View className="flex-row items-center mb-2">
+              <Ionicons name="alert-circle" size={20} color="#F59E0B" />
+              <Text className="text-base font-bold text-warning ml-2">Special Instructions</Text>
+            </View>
+            <Text className="text-base text-foreground leading-6">{activeOrder.specialInstructions}</Text>
+          </Card>
         )}
 
         {/* Distance and Earnings */}
-        <View className="mb-6 flex-row gap-3">
-          <View className="flex-1 p-4 bg-surface rounded-lg border border-border items-center">
-            <Text className="text-xs text-muted font-semibold uppercase">Distance</Text>
-            <Text className="text-2xl font-bold text-foreground mt-1">{activeOrder.estimatedDistance} km</Text>
-          </View>
-          <View className="flex-1 p-4 bg-surface rounded-lg border border-border items-center">
-            <Text className="text-xs text-muted font-semibold uppercase">Earnings</Text>
-            <Text className="text-2xl font-bold text-success mt-1">${activeOrder.estimatedEarnings.toFixed(2)}</Text>
-          </View>
-        </View>
-
-        {/* Action Buttons */}
-        <View className="gap-3">
-          {activeOrder.status !== "delivered" && activeOrder.status !== "cancelled" && (
-            <TouchableOpacity
-              onPress={handleStatusUpdate}
-              activeOpacity={0.7}
-              className="bg-primary rounded-lg py-4 items-center"
-            >
-              <Text className="text-white font-semibold text-base">
-                {currentStatusIndex < STATUS_STEPS.length - 1
-                  ? `Mark as ${STATUS_LABELS[STATUS_STEPS[currentStatusIndex + 1]]}`
-                  : "Complete Delivery"}
-              </Text>
-            </TouchableOpacity>
-          )}
-
-          {activeOrder.status !== "delivered" && activeOrder.status !== "cancelled" && (
-            <TouchableOpacity
-              onPress={handleCancel}
-              activeOpacity={0.7}
-              className="border border-error rounded-lg py-3 items-center"
-            >
-              <Text className="text-error font-semibold">Cancel Delivery</Text>
-            </TouchableOpacity>
-          )}
-
-          {(activeOrder.status === "delivered" || activeOrder.status === "cancelled") && (
-            <TouchableOpacity
-              onPress={() => router.replace("/(tabs)/home")}
-              activeOpacity={0.7}
-              className="bg-primary rounded-lg py-4 items-center"
-            >
-              <Text className="text-white font-semibold text-base">Back to Home</Text>
-            </TouchableOpacity>
-          )}
+        <View className="flex-row gap-3 mb-4">
+          <Card className="flex-1 items-center">
+            <Text className="text-xs text-muted font-bold uppercase mb-1">Distance</Text>
+            <Text className="text-3xl font-extrabold text-foreground">{activeOrder.estimatedDistance}</Text>
+            <Text className="text-sm text-muted">km</Text>
+          </Card>
+          <Card className="flex-1 items-center bg-success/10">
+            <Text className="text-xs text-muted font-bold uppercase mb-1">Earnings</Text>
+            <Text className="text-3xl font-extrabold text-success">{formatCurrency(activeOrder.estimatedEarnings)}</Text>
+          </Card>
         </View>
       </ScrollView>
+
+      {/* Fixed Bottom Actions */}
+      <View className="absolute bottom-0 left-0 right-0 bg-surface border-t border-border/80 p-5 pb-8 gap-3 shadow-lg">
+        {activeOrder.status !== "delivered" && activeOrder.status !== "cancelled" && (
+          <>
+            <Button
+              label={nextAction}
+              variant="primary"
+              size="xl"
+              onPress={handleStatusUpdate}
+              icon={<Ionicons name="checkmark-circle" size={24} color="white" />}
+            />
+            <Button
+              label="Cancel Delivery"
+              variant="danger"
+              size="lg"
+              onPress={handleCancel}
+              icon={<Ionicons name="close-circle" size={20} color="white" />}
+            />
+          </>
+        )}
+
+        {(activeOrder.status === "delivered" || activeOrder.status === "cancelled") && (
+          <Button
+            label="Back to Home"
+            variant="primary"
+            size="xl"
+            onPress={() => router.replace("/(tabs)/home")}
+            icon={<Ionicons name="home" size={24} color="white" />}
+          />
+        )}
+      </View>
     </ScreenContainer>
   );
 }

@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { FlatList, Text, TouchableOpacity, View, Alert } from 'react-native';
+import { FlatList, Text, View, Alert } from 'react-native';
 import { ScreenContainer } from '@/components/screen-container';
 import { useOrders } from '@/lib/order-context';
-import { getElapsedTime, getStatusLabel, formatCurrency } from '@/lib/order-utils';
+import { getElapsedTime, getStatusLabel } from '@/lib/order-utils';
 import { StatusBadge } from '@/components/status-badge';
+import { Ionicons } from '@expo/vector-icons';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 
 export default function KitchenViewScreen() {
   const { orders, updateOrderStatus } = useOrders();
@@ -26,10 +29,10 @@ export default function KitchenViewScreen() {
   };
 
   const getNextAction = (status: any) => {
-    const actions: Record<string, { label: string; nextStatus: any; color: string }> = {
-      accepted: { label: 'Start Preparing', nextStatus: 'preparing', color: '#FF6B35' },
-      preparing: { label: 'Mark Ready', nextStatus: 'ready', color: '#22C55E' },
-      ready: { label: 'Complete', nextStatus: 'completed', color: '#22C55E' },
+    const actions: Record<string, { label: string; nextStatus: any; variant: 'primary' | 'success' }> = {
+      accepted: { label: 'Start Cooking', nextStatus: 'preparing', variant: 'primary' },
+      preparing: { label: 'Mark Ready', nextStatus: 'ready', variant: 'success' },
+      ready: { label: 'Complete Order', nextStatus: 'completed', variant: 'success' },
     };
     return actions[status];
   };
@@ -37,87 +40,112 @@ export default function KitchenViewScreen() {
   const renderKitchenCard = ({ item }: any) => {
     const action = getNextAction(item.status);
     const elapsedTime = getElapsedTime(item.createdAt);
+    const isUrgent = parseInt(elapsedTime.split(' ')[0]) > 10; // More than 10 minutes
 
     return (
-      <View className="px-4 mb-4">
-        <View className="bg-surface rounded-lg p-4 border-2 border-border">
-          {/* Order ID - Large */}
-          <Text className="text-5xl font-bold text-foreground mb-4">
-            #{item.id.replace('order_', '')}
-          </Text>
-
-          {/* Status and Time */}
-          <View className="flex-row justify-between items-center mb-4">
-            <StatusBadge status={item.status} size="large" />
-            <Text className="text-lg font-semibold text-primary">{elapsedTime}</Text>
+      <View className="px-4 mb-5">
+        <Card className={`p-5 ${isUrgent ? 'border-4 border-warning' : 'border-2 border-border/50'}`}>
+          {/* Order ID - Extra Large for Kitchen */}
+          <View className="flex-row justify-between items-center mb-5">
+            <Text className="text-6xl font-extrabold text-foreground">
+              #{item.id.replace('order_', '')}
+            </Text>
+            {isUrgent && (
+              <View className="bg-warning/20 p-3 rounded-full">
+                <Ionicons name="alert-circle" size={32} color="#F59E0B" />
+              </View>
+            )}
           </View>
 
-          {/* Items - Large Text */}
-          <View className="mb-4 bg-primary/10 rounded-lg p-3">
+          {/* Status and Time - Large */}
+          <View className="flex-row justify-between items-center mb-5 pb-4 border-b-2 border-border/30">
+            <StatusBadge status={item.status} size="large" />
+            <View className="flex-row items-center bg-primary/10 px-4 py-2 rounded-xl">
+              <Ionicons name="time" size={24} color="#FF6B35" />
+              <Text className="text-xl font-bold text-primary ml-2">{elapsedTime}</Text>
+            </View>
+          </View>
+
+          {/* Items - Extra Large for Kitchen Readability */}
+          <View className="mb-5 bg-primary/5 rounded-xl p-4 border-2 border-primary/20">
+            <Text className="text-sm font-bold text-muted uppercase tracking-wider mb-3">Items</Text>
             {item.items.map((itemObj: any) => (
-              <View key={itemObj.id} className="mb-2">
-                <Text className="text-2xl font-bold text-foreground">
-                  {itemObj.quantity}x {itemObj.name}
+              <View key={itemObj.id} className="mb-3">
+                <Text className="text-3xl font-extrabold text-foreground">
+                  {itemObj.quantity}× {itemObj.name}
                 </Text>
                 {itemObj.specialInstructions && (
-                  <Text className="text-base text-warning mt-1">
-                    ⚠️ {itemObj.specialInstructions}
-                  </Text>
+                  <View className="bg-warning/10 border-2 border-warning rounded-lg p-3 mt-2">
+                    <View className="flex-row items-center">
+                      <Ionicons name="warning" size={20} color="#F59E0B" />
+                      <Text className="text-base font-bold text-warning ml-2 uppercase">Special Request</Text>
+                    </View>
+                    <Text className="text-lg text-foreground mt-2 font-semibold">
+                      {itemObj.specialInstructions}
+                    </Text>
+                  </View>
                 )}
               </View>
             ))}
           </View>
 
-          {/* Special Instructions */}
+          {/* Overall Special Instructions */}
           {item.specialInstructions && (
-            <View className="mb-4 bg-warning/10 rounded-lg p-3 border border-warning">
-              <Text className="text-base font-semibold text-warning">Special Instructions</Text>
-              <Text className="text-base text-foreground mt-1">{item.specialInstructions}</Text>
+            <View className="mb-5 bg-warning/10 rounded-xl p-4 border-2 border-warning">
+              <View className="flex-row items-center mb-2">
+                <Ionicons name="alert-circle" size={24} color="#F59E0B" />
+                <Text className="text-base font-extrabold text-warning ml-2 uppercase tracking-wide">Order Note</Text>
+              </View>
+              <Text className="text-xl text-foreground font-semibold leading-6">{item.specialInstructions}</Text>
             </View>
           )}
 
-          {/* Action Button */}
+          {/* Action Button - Extra Large */}
           {action && (
-            <TouchableOpacity
+            <Button
+              label={action.label}
+              variant={action.variant}
+              size="xl"
               onPress={() => handleStatusUpdate(item.id, action.nextStatus)}
-              disabled={isUpdating}
-              style={{
-                backgroundColor: action.color,
-                opacity: isUpdating ? 0.6 : 1,
-              }}
-              className="rounded-lg py-4 items-center"
-            >
-              <Text className="text-white font-bold text-xl">{action.label}</Text>
-            </TouchableOpacity>
+              loading={isUpdating}
+              icon={<Ionicons name="checkmark-circle" size={24} color="white" />}
+            />
           )}
-        </View>
+        </Card>
       </View>
     );
   };
 
   return (
-    <ScreenContainer className="p-0">
+    <ScreenContainer className="p-0 bg-background">
       <View className="flex-1">
         {/* Header */}
-        <View className="px-4 pt-4 pb-2">
-          <Text className="text-3xl font-bold text-foreground">Kitchen</Text>
-          <Text className="text-sm text-muted mt-1">
-            {activeOrders.length} active order{activeOrders.length !== 1 ? 's' : ''}
-          </Text>
+        <View className="px-5 pt-6 pb-4 bg-surface border-b border-border/40">
+          <Text className="text-3xl font-extrabold text-foreground mb-2">Kitchen View</Text>
+          <View className="flex-row items-center">
+            <View className="bg-success/10 px-3 py-2 rounded-lg">
+              <Text className="text-lg font-extrabold text-success">
+                {activeOrders.length} Active
+              </Text>
+            </View>
+          </View>
         </View>
 
         {/* Kitchen Orders */}
         {activeOrders.length === 0 ? (
-          <View className="flex-1 justify-center items-center">
-            <Text className="text-2xl font-bold text-foreground">No Active Orders</Text>
-            <Text className="text-base text-muted mt-2">All caught up! 🎉</Text>
+          <View className="flex-1 justify-center items-center p-8">
+            <View className="bg-success/10 p-8 rounded-full mb-6">
+              <Ionicons name="checkmark-done-circle" size={80} color="#10B981" />
+            </View>
+            <Text className="text-3xl font-extrabold text-foreground mb-3">All Caught Up!</Text>
+            <Text className="text-xl text-muted text-center">No active orders right now 🎉</Text>
           </View>
         ) : (
           <FlatList
             data={activeOrders}
             keyExtractor={item => item.id}
             renderItem={renderKitchenCard}
-            contentContainerStyle={{ paddingBottom: 20 }}
+            contentContainerStyle={{ paddingTop: 16, paddingBottom: 20 }}
           />
         )}
       </View>

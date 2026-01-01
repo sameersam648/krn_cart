@@ -48,6 +48,7 @@ function RootLayoutContent() {
         <Stack.Screen name="(auth)" />
       )}
       <Stack.Screen name="oauth/callback" />
+      <Stack.Screen name="restaurant" />
     </Stack>
   );
 }

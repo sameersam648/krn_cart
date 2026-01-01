@@ -29,6 +29,12 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
+        name="index"
+        options={{
+          href: null, // Hide from tabs
+        }}
+      />
+      <Tabs.Screen
         name="home"
         options={{
           title: "Orders",

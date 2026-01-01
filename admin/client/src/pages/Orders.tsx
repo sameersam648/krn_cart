@@ -120,15 +120,15 @@ export default function Orders() {
                   className="pl-10"
                 />
               </div>
-              <Select value={statusFilter} onValueChange={(value) => {
-                setStatusFilter(value);
+              <Select value={statusFilter || "all"} onValueChange={(value) => {
+                setStatusFilter(value === "all" ? "" : value);
                 setPage(0);
               }}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Statuses</SelectItem>
+                  <SelectItem value="all">All Statuses</SelectItem>
                   {ORDER_STATUSES.map((status) => (
                     <SelectItem key={status} value={status}>
                       {status.replace("_", " ")}
@@ -178,11 +178,10 @@ export default function Orders() {
                             </span>
                           </td>
                           <td className="py-3 px-4">
-                            <span className={`inline-block px-2 py-1 text-xs font-semibold rounded-full ${
-                              order.paymentStatus === "completed"
+                            <span className={`inline-block px-2 py-1 text-xs font-semibold rounded-full ${order.paymentStatus === "completed"
                                 ? "bg-green-100 text-green-800"
                                 : "bg-yellow-100 text-yellow-800"
-                            }`}>
+                              }`}>
                               {order.paymentStatus}
                             </span>
                           </td>

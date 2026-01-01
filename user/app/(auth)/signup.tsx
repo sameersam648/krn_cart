@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { ScrollView, Text, TextInput, TouchableOpacity, View, Alert } from "react-native";
+import { ScrollView, Text, View, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useAuth } from "@/lib/auth-context";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -29,110 +31,94 @@ export default function SignupScreen() {
 
   return (
     <ScreenContainer className="bg-background" edges={["top", "left", "right", "bottom"]}>
-      <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
       >
-        <View className="flex-1 justify-center px-6 py-12">
-          {/* Header */}
-          <View className="items-center mb-8">
-            <Text className="text-4xl font-bold text-primary mb-2">Foodie</Text>
-            <Text className="text-base text-muted">Create your account</Text>
-          </View>
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          showsVerticalScrollIndicator={false}
+          className="px-6"
+        >
+          <View className="flex-1 justify-center py-12">
+            {/* Header */}
+            <View className="items-center mb-10 space-y-2">
+              <Text className="text-4xl font-bold text-primary tracking-tight">Create Account</Text>
+              <Text className="text-base text-muted text-center">
+                Join us and start satisfying your cravings
+              </Text>
+            </View>
 
-          {/* Signup Form */}
-          <View className="gap-3">
-            {/* Name Input */}
-            <View className="gap-2">
-              <Text className="text-sm font-semibold text-foreground">Full Name</Text>
-              <TextInput
-                className="bg-surface border border-border rounded-lg px-4 py-3 text-foreground text-base"
-                placeholder="Enter your full name"
-                placeholderTextColor="#94A3B8"
+            {/* Signup Form */}
+            <View className="space-y-4">
+              <Input
+                label="Full Name"
+                placeholder="John Doe"
                 value={name}
                 onChangeText={setName}
                 editable={!isLoading}
               />
-            </View>
 
-            {/* Email Input */}
-            <View className="gap-2">
-              <Text className="text-sm font-semibold text-foreground">Email Address</Text>
-              <TextInput
-                className="bg-surface border border-border rounded-lg px-4 py-3 text-foreground text-base"
-                placeholder="Enter your email"
-                placeholderTextColor="#94A3B8"
+              <Input
+                label="Email Address"
+                placeholder="john@example.com"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 editable={!isLoading}
               />
-            </View>
 
-            {/* Phone Input */}
-            <View className="gap-2">
-              <Text className="text-sm font-semibold text-foreground">Phone Number</Text>
-              <TextInput
-                className="bg-surface border border-border rounded-lg px-4 py-3 text-foreground text-base"
-                placeholder="Enter your phone number"
-                placeholderTextColor="#94A3B8"
+              <Input
+                label="Phone Number"
+                placeholder="+1 234 567 8900"
                 value={phone}
                 onChangeText={setPhone}
                 keyboardType="phone-pad"
                 editable={!isLoading}
               />
-            </View>
 
-            {/* Password Input */}
-            <View className="gap-2">
-              <Text className="text-sm font-semibold text-foreground">Password</Text>
-              <TextInput
-                className="bg-surface border border-border rounded-lg px-4 py-3 text-foreground text-base"
-                placeholder="Enter your password"
-                placeholderTextColor="#94A3B8"
+              <Input
+                label="Password"
+                placeholder="Create a password"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
                 editable={!isLoading}
               />
-            </View>
 
-            {/* Confirm Password Input */}
-            <View className="gap-2">
-              <Text className="text-sm font-semibold text-foreground">Confirm Password</Text>
-              <TextInput
-                className="bg-surface border border-border rounded-lg px-4 py-3 text-foreground text-base"
-                placeholder="Confirm your password"
-                placeholderTextColor="#94A3B8"
+              <Input
+                label="Confirm Password"
+                placeholder="Repeat password"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry
                 editable={!isLoading}
               />
+
+              <Button
+                label={isLoading ? "Creating account..." : "Sign Up"}
+                onPress={handleSignup}
+                loading={isLoading}
+                size="lg"
+                className="mt-4"
+              />
             </View>
 
-            {/* Signup Button */}
-            <TouchableOpacity
-              className="bg-primary rounded-lg py-3 mt-4 active:opacity-80"
-              onPress={handleSignup}
-              disabled={isLoading}
-            >
-              <Text className="text-center text-white font-semibold text-base">
-                {isLoading ? "Creating account..." : "Sign Up"}
-              </Text>
-            </TouchableOpacity>
+            {/* Login Link */}
+            <View className="flex-row justify-center items-center mt-8 mb-8">
+              <Text className="text-muted text-sm">Already have an account? </Text>
+              <Button
+                label="Login"
+                variant="ghost"
+                size="sm"
+                onPress={() => router.back()}
+                textClassName="text-primary font-bold"
+              />
+            </View>
           </View>
-
-          {/* Login Link */}
-          <View className="flex-row justify-center items-center mt-6">
-            <Text className="text-muted text-sm">Already have an account? </Text>
-            <TouchableOpacity onPress={() => router.back()}>
-              <Text className="text-primary font-semibold text-sm">Login</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </ScreenContainer>
   );
 }

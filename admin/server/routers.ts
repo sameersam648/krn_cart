@@ -35,12 +35,13 @@ import {
   createAuditLog,
 } from "./db";
 
-// Admin-only procedure
-const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (ctx.user.role !== "admin" && ctx.user.role !== "sub_admin") {
-    throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
-  }
-  return next({ ctx });
+// Mock admin user for development (no auth required)
+const mockAdminUser = { id: 1, role: "admin" as const };
+
+// Admin procedure - using publicProcedure for development (auth disabled)
+const adminProcedure = publicProcedure.use(({ ctx, next }) => {
+  // Bypass auth check for development - inject mock admin user
+  return next({ ctx: { ...ctx, user: mockAdminUser } });
 });
 
 export const appRouter = router({

@@ -1,169 +1,121 @@
-import React, { useState } from "react";
-import { ScrollView, Text, View, TouchableOpacity, Alert, Switch } from "react-native";
+import React from "react";
+import { ScrollView, Text, View, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { ScreenContainer } from "@/components/screen-container";
 import { useAuth } from "@/lib/auth-context";
+import { useOrders } from "@/lib/order-context";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { Ionicons } from "@expo/vector-icons";
+import { formatCurrency } from "@/lib/constants";
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { rider, logout, updateRiderStatus } = useAuth();
-  const [isOnline, setIsOnline] = useState(rider?.isOnline || false);
-  const [isLoading, setIsLoading] = useState(false);
+  const { rider, logout } = useAuth();
+  const { completedOrders = [] } = useOrders();
 
-  const handleToggleOnline = async () => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      await updateRiderStatus(!isOnline);
-      setIsOnline(!isOnline);
-    } catch (error) {
-      Alert.alert("Error", "Failed to update status");
-    }
-  };
+  // Calculate stats with safe defaults
+  const deliveredOrders = completedOrders.filter(o => o?.status === 'delivered') || [];
+  const completedCount = deliveredOrders.length;
+  const totalEarnings = deliveredOrders.reduce((sum, o) => sum + (o?.estimatedEarnings || 0), 0);
+  const avgRating = 4.8; // Mock data
 
   const handleLogout = () => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
-      { text: "Cancel", onPress: () => {} },
-      {
-        text: "Logout",
-        onPress: async () => {
-          try {
-            setIsLoading(true);
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Alert.alert(
+      "Logout",
+      "Are you sure you want to logout?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Logout",
+          style: "destructive",
+          onPress: async () => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             await logout();
             router.replace("/login");
-          } catch (error) {
-            Alert.alert("Error", "Failed to logout");
-          } finally {
-            setIsLoading(false);
-          }
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
 
-  if (!rider) {
-    return (
-      <ScreenContainer className="justify-center items-center">
-        <Text className="text-foreground">Loading profile...</Text>
-      </ScreenContainer>
-    );
-  }
+  const renderSettingItem = (icon: string, label: string, value?: string, onPress?: () => void) => (
+    <Button
+      label={label}
+      variant="ghost"
+      size="lg"
+      onPress={onPress || (() => Alert.alert("Coming Soon", `${label} feature coming soon!`))}
+      className="justify-start mb-2"
+      icon={<Ionicons name={icon as any} size={22} color="#64748B" />}
+      textClassName="text-left flex-1"
+    />
+  );
 
   return (
-    <ScreenContainer className="p-4">
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
-        {/* Header */}
-        <View className="mb-6">
-          <Text className="text-2xl font-bold text-foreground">Profile</Text>
-        </View>
+    <ScreenContainer className="p-0 bg-background">
+      {/* Header */}
+      <View className="px-5 pt-6 pb-4 bg-surface border-b border-border/40">
+        <Text className="text-3xl font-extrabold text-foreground">Profile</Text>
+      </View>
 
-        {/* Online Status Toggle */}
-        <View className="bg-surface border border-border rounded-lg p-4 mb-6 flex-row justify-between items-center">
-          <View>
-            <Text className="text-base font-semibold text-foreground">Online Status</Text>
-            <Text className="text-sm text-muted mt-1">
-              {isOnline ? "You are online and accepting orders" : "You are offline"}
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
+        {/* Rider Info Card */}
+        <Card className="mb-4 items-center py-6">
+          <View className="w-24 h-24 bg-gradient-to-br from-primary to-orange-600 rounded-full items-center justify-center mb-4 shadow-lg">
+            <Text className="text-4xl font-extrabold text-white">
+              {rider?.name?.charAt(0).toUpperCase() || "R"}
             </Text>
           </View>
-          <Switch value={isOnline} onValueChange={handleToggleOnline} />
+          <Text className="text-2xl font-extrabold text-foreground mb-1">
+            {rider?.name || "Rider Name"}
+          </Text>
+          <Text className="text-base text-muted">{rider?.email || "rider@example.com"}</Text>
+        </Card>
+
+        {/* Stats Cards */}
+        <View className="flex-row gap-3 mb-4">
+          <Card className="flex-1 items-center py-4 bg-success/5">
+            <Ionicons name="checkmark-done-circle" size={32} color="#10B981" />
+            <Text className="text-3xl font-extrabold text-foreground mt-2">{completedCount}</Text>
+            <Text className="text-xs text-muted font-bold uppercase">Deliveries</Text>
+          </Card>
+          <Card className="flex-1 items-center py-4 bg-primary/5">
+            <Ionicons name="star" size={32} color="#FF6B35" />
+            <Text className="text-3xl font-extrabold text-foreground mt-2">{avgRating}</Text>
+            <Text className="text-xs text-muted font-bold uppercase">Rating</Text>
+          </Card>
         </View>
 
-        {/* Rider Information */}
-        <View className="mb-6">
-          <Text className="text-lg font-bold text-foreground mb-4">Rider Information</Text>
-
-          {/* Name */}
-          <View className="bg-surface border border-border rounded-lg p-4 mb-3">
-            <Text className="text-xs text-muted font-semibold uppercase">Name</Text>
-            <Text className="text-base font-semibold text-foreground mt-2">{rider.name}</Text>
-          </View>
-
-          {/* Email */}
-          <View className="bg-surface border border-border rounded-lg p-4 mb-3">
-            <Text className="text-xs text-muted font-semibold uppercase">Email</Text>
-            <Text className="text-base font-semibold text-foreground mt-2">{rider.email}</Text>
-          </View>
-
-          {/* Phone */}
-          <View className="bg-surface border border-border rounded-lg p-4 mb-3">
-            <Text className="text-xs text-muted font-semibold uppercase">Phone</Text>
-            <Text className="text-base font-semibold text-foreground mt-2">{rider.phone}</Text>
-          </View>
-
-          {/* Vehicle Type */}
-          <View className="bg-surface border border-border rounded-lg p-4 mb-3">
-            <Text className="text-xs text-muted font-semibold uppercase">Vehicle Type</Text>
-            <Text className="text-base font-semibold text-foreground mt-2 capitalize">{rider.vehicleType}</Text>
-          </View>
-
-          {/* Rating */}
-          {rider.rating && (
-            <View className="bg-surface border border-border rounded-lg p-4">
-              <Text className="text-xs text-muted font-semibold uppercase">Rating</Text>
-              <Text className="text-base font-semibold text-foreground mt-2">
-                ⭐ {rider.rating.toFixed(1)} / 5.0
-              </Text>
-            </View>
-          )}
-        </View>
+        <Card className="mb-4 items-center py-4 bg-success/10 border-2 border-success/30">
+          <Text className="text-xs font-bold text-muted uppercase mb-1">Total Earnings</Text>
+          <Text className="text-4xl font-extrabold text-success">{formatCurrency(totalEarnings)}</Text>
+        </Card>
 
         {/* Settings Section */}
-        <View className="mb-6">
-          <Text className="text-lg font-bold text-foreground mb-4">Settings</Text>
+        <Card className="mb-4">
+          <Text className="text-base font-bold text-foreground mb-3 uppercase tracking-wide">Account Settings</Text>
+          {renderSettingItem("person-outline", "Edit Profile")}
+          {renderSettingItem("notifications-outline", "Notifications")}
+          {renderSettingItem("card-outline", "Payment Methods")}
+          {renderSettingItem("shield-checkmark-outline", "Privacy & Security")}
+        </Card>
 
-          <TouchableOpacity
-            onPress={() => Alert.alert("Info", "Notifications settings coming soon")}
-            activeOpacity={0.7}
-            className="bg-surface border border-border rounded-lg p-4 mb-3 flex-row justify-between items-center"
-          >
-            <Text className="text-base font-semibold text-foreground">Notifications</Text>
-            <Text className="text-primary">→</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => Alert.alert("Info", "Language settings coming soon")}
-            activeOpacity={0.7}
-            className="bg-surface border border-border rounded-lg p-4 mb-3 flex-row justify-between items-center"
-          >
-            <Text className="text-base font-semibold text-foreground">Language</Text>
-            <Text className="text-primary">→</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => Alert.alert("Info", "Theme settings coming soon")}
-            activeOpacity={0.7}
-            className="bg-surface border border-border rounded-lg p-4 mb-3 flex-row justify-between items-center"
-          >
-            <Text className="text-base font-semibold text-foreground">Theme</Text>
-            <Text className="text-primary">→</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => Alert.alert("Info", "Help & Support coming soon")}
-            activeOpacity={0.7}
-            className="bg-surface border border-border rounded-lg p-4 flex-row justify-between items-center"
-          >
-            <Text className="text-base font-semibold text-foreground">Help & Support</Text>
-            <Text className="text-primary">→</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* App Info */}
-        <View className="bg-surface border border-border rounded-lg p-4 mb-6">
-          <Text className="text-xs text-muted font-semibold uppercase mb-2">App Version</Text>
-          <Text className="text-sm text-foreground">1.0.0</Text>
-        </View>
+        <Card className="mb-4">
+          <Text className="text-base font-bold text-foreground mb-3 uppercase tracking-wide">Support</Text>
+          {renderSettingItem("help-circle-outline", "Help Center")}
+          {renderSettingItem("chatbubble-outline", "Contact Support")}
+          {renderSettingItem("document-text-outline", "Terms & Conditions")}
+        </Card>
 
         {/* Logout Button */}
-        <TouchableOpacity
+        <Button
+          label="Logout"
+          variant="danger"
+          size="xl"
           onPress={handleLogout}
-          disabled={isLoading}
-          activeOpacity={0.7}
-          className="border border-error rounded-lg py-4 items-center"
-        >
-          <Text className="text-error font-semibold text-base">{isLoading ? "Logging out..." : "Logout"}</Text>
-        </TouchableOpacity>
+          icon={<Ionicons name="log-out" size={24} color="white" />}
+        />
       </ScrollView>
     </ScreenContainer>
   );

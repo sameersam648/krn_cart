@@ -1,110 +1,123 @@
-import React, { useState } from "react";
-import { ScrollView, Text, TextInput, TouchableOpacity, View, Alert, type GestureResponderEvent } from "react-native";
-import { useRouter } from "expo-router";
-import * as Haptics from "expo-haptics";
-import { ScreenContainer } from "@/components/screen-container";
-import { useAuth } from "@/lib/auth-context";
+import React, { useState } from 'react';
+import { ScrollView, Text, View, Alert, KeyboardAvoidingView, Platform, TextInput } from 'react-native';
+import { useRouter } from 'expo-router';
+import { ScreenContainer } from '@/components/screen-container';
+import { useAuth } from '@/lib/auth-context';
+import { Ionicons } from '@expo/vector-icons';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 
 export default function LoginScreen() {
   const router = useRouter();
   const { login } = useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert("Error", "Please enter both email and password");
+    if (!email.trim() || !password.trim()) {
+      Alert.alert('Error', 'Please enter both email and password');
       return;
     }
 
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       await login(email, password);
-      router.replace("/(tabs)");
+      router.replace('/(tabs)');
     } catch (error) {
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert("Login Failed", error instanceof Error ? error.message : "An error occurred");
+      Alert.alert('Login Failed', error instanceof Error ? error.message : 'An error occurred');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <ScreenContainer className="bg-background" edges={["top", "bottom", "left", "right"]}>
-      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
-        <View className="px-6 gap-8">
+    <ScreenContainer edges={['top', 'left', 'right', 'bottom']} className="bg-background">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Header */}
-          <View className="items-center gap-2">
-            <Text className="text-4xl font-bold text-foreground">Delivery Rider</Text>
-            <Text className="text-base text-muted text-center">Sign in to your account</Text>
+          <View className="items-center mb-12">
+            <View className="h-28 w-28 bg-primary/10 rounded-full items-center justify-center mb-6 shadow-lg border-2 border-primary/20">
+              <Ionicons name="bicycle" size={56} color="#FF6B35" />
+            </View>
+            <Text className="text-4xl font-extrabold text-foreground mb-2 tracking-tight">
+              Delivery Partner
+            </Text>
+            <Text className="text-base text-muted text-center max-w-[280px]">
+              Sign in to start accepting deliveries
+            </Text>
           </View>
 
-          {/* Form */}
-          <View className="gap-4">
+          {/* Login Form */}
+          <View className="gap-6">
             {/* Email Input */}
-            <View className="gap-2">
-              <Text className="text-sm font-semibold text-foreground">Email or Phone</Text>
-              <TextInput
-                className="bg-surface border border-border rounded-lg px-4 py-3 text-foreground"
-                placeholder="Enter your email or phone"
-                placeholderTextColor="#9BA1A6"
-                value={email}
-                onChangeText={setEmail}
-                editable={!isLoading}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
+            <View>
+              <Text className="text-sm font-bold text-foreground mb-2 uppercase tracking-wide">Email Address</Text>
+              <View className="flex-row items-center bg-surface border-2 border-border rounded-xl px-4 py-4 focus:border-primary">
+                <Ionicons name="mail-outline" size={20} color="#64748B" />
+                <TextInput
+                  className="flex-1 ml-3 text-base text-foreground font-semibold"
+                  placeholder="rider@example.com"
+                  placeholderTextColor="#94A3B8"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  editable={!isLoading}
+                  value={email}
+                  onChangeText={setEmail}
+                />
+              </View>
             </View>
 
             {/* Password Input */}
-            <View className="gap-2">
-              <Text className="text-sm font-semibold text-foreground">Password</Text>
-              <TextInput
-                className="bg-surface border border-border rounded-lg px-4 py-3 text-foreground"
-                placeholder="Enter your password"
-                placeholderTextColor="#9BA1A6"
-                value={password}
-                onChangeText={setPassword}
-                editable={!isLoading}
-                secureTextEntry
-              />
+            <View>
+              <Text className="text-sm font-bold text-foreground mb-2 uppercase tracking-wide">Password</Text>
+              <View className="flex-row items-center bg-surface border-2 border-border rounded-xl px-4 py-4 focus:border-primary">
+                <Ionicons name="lock-closed-outline" size={20} color="#64748B" />
+                <TextInput
+                  className="flex-1 ml-3 text-base text-foreground font-semibold"
+                  placeholder="Enter your password"
+                  placeholderTextColor="#94A3B8"
+                  secureTextEntry
+                  editable={!isLoading}
+                  value={password}
+                  onChangeText={setPassword}
+                />
+              </View>
             </View>
 
-            {/* Forgot Password Link */}
-            <TouchableOpacity
-              onPress={() => Alert.alert("Info", "Password reset feature coming soon")}
-              disabled={isLoading}
-            >
-              <Text className="text-sm text-primary font-semibold">Forgot Password?</Text>
-            </TouchableOpacity>
+            <Button
+              label={isLoading ? "Signing In..." : "Sign In"}
+              variant="primary"
+              size="xl"
+              onPress={handleLogin}
+              loading={isLoading}
+              className="mt-4"
+            />
           </View>
 
-          {/* Login Button */}
-          <TouchableOpacity
-            onPress={handleLogin}
-            disabled={isLoading}
-            activeOpacity={isLoading ? 1 : 0.8}
-            className="bg-primary rounded-lg py-4 items-center"
-          >
-            <Text className="text-white font-semibold text-base">
-              {isLoading ? "Signing in..." : "Sign In"}
-            </Text>
-          </TouchableOpacity>
-
-          {/* Demo Credentials */}
-          <View className="bg-surface border border-border rounded-lg p-4 gap-2">
-            <Text className="text-xs font-semibold text-muted uppercase">Demo Credentials</Text>
-            <Text className="text-sm text-foreground">
-              Email: <Text className="font-mono">demo@rider.com</Text>
-            </Text>
-            <Text className="text-sm text-foreground">
-              Password: <Text className="font-mono">password123</Text>
-            </Text>
-          </View>
-        </View>
-      </ScrollView>
+          {/* Demo Info */}
+          <Card className="mt-8 bg-primary/5 border-2 border-primary/20">
+            <View className="flex-row items-start">
+              <View className="bg-primary/20 p-2 rounded-lg mr-3">
+                <Ionicons name="information-circle" size={20} color="#FF6B35" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-xs font-bold text-foreground mb-2 uppercase tracking-wide">Demo Credentials</Text>
+                <Text className="text-sm text-muted leading-5">
+                  Email: <Text className="text-foreground font-bold">demo@rider.com</Text>{'\n'}
+                  Password: <Text className="text-foreground font-bold">demo123</Text>
+                </Text>
+              </View>
+            </View>
+          </Card>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </ScreenContainer>
   );
 }
