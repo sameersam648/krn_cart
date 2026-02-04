@@ -12,7 +12,7 @@ export default function Dashboard() {
 
   const processRevenueData = () => {
     if (!revenueData) return [];
-    
+
     const dailyRevenue: Record<string, number> = {};
     revenueData.forEach((item: any) => {
       const date = new Date(item.date).toLocaleDateString();
@@ -75,7 +75,7 @@ export default function Dashboard() {
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-2">Welcome to your food delivery admin panel</p>
+          <p className="text-gray-600 mt-2">Welcome to your KNR Cart admin panel</p>
         </div>
 
         {/* Stats Grid */}

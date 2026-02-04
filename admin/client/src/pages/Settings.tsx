@@ -194,7 +194,7 @@ export default function Settings() {
           </CardHeader>
           <CardContent className="text-sm text-blue-800 space-y-2">
             <p>
-              These settings control the behavior and configuration of your food delivery platform.
+              These settings control the behavior and configuration of your KNR Cart platform.
             </p>
             <p>
               Changes take effect immediately and apply to all users and operations on the platform.
